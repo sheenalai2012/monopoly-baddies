@@ -97,11 +97,6 @@ class Player:
         else:
             return amount <= self._cash
 
-    def buy_or_bid(self, dict_road_info):
-        """ Determine whether to buy or to bid the road"""
-        # TODO placeholder. To implement.
-        return 'buy'
-
     def pay_bank(self, amount):
         """ Pay amount to the bank. Money are subtracted from player's cash and added to bank's total cash.
 
@@ -224,17 +219,6 @@ class Player:
 
         opponent_name = dict_property_info['belongs_to']
         self.pay_opponent(opponent_name, amount)
-
-    def bid(self, dict_road_info, player_offer):
-        """ Counter-bid an offer"""
-        # TODO placeholder. To implement.
-        return None
-
-    def mortgage_or_bid(self, dict_road_info):
-        """ Determine whether to mortgage (to buy) or bid"""
-        # This function is incomplete. In reality, the player should decide whether to mortgage or bid to try buuying
-        # the road at a lower (available) price.
-        return 'mortgage'
 
     def mortgage(self, property_name, property_type):
 
@@ -433,11 +417,6 @@ class Player:
             self.buy_property(dict_property_info)
         else:
             raise Exception('Property type {} does not exist'.format(property_type))
-
-    def make_offer(self, opponent):
-        """ Make an offer to the owner of the road"""
-        # TODO placeholder. To implement.
-        return None
 
     def has_all_roads_of_color(self, color):
         """ Returns True if player owns all the roads of a given color. Return False otherwise. It's use to calculate
@@ -821,9 +800,7 @@ class Player:
             self._position = 0
             self._cash += 200
 
-
     def play(self):
-
         tuple_dices = self.roll_dice()
         self._dice_value = tuple_dices[0] + tuple_dices[1]
         if self._position is not 10 or (self._position == 10 and self._free_visit):  # if player is not in jail
@@ -901,26 +878,23 @@ class Player:
             property_name = board_cell['name']
             dict_property_info = self._dict_roads[property_name] if board_cell_type == 'road' else self._dict_properties[property_name]
             property_owner = dict_property_info['belongs_to']
+
+            # WHEN YOU LAND ON YOUR OWN PROPERTY
             if property_name in self._list_owned_roads or property_name in self._list_owned_stations or property_name in self._list_owned_utilities:
                 pass
+            # THIS IS WHERE YOU DECIDE TO BUY A PROPERTY
             elif property_owner is None:
                 if self.have_enough_money(dict_property_info['price']):
-                    buy_bid = self.buy_or_bid(dict_property_info)
-                    if buy_bid == 'buy' and board_cell_type == 'road':
+                    # BUY IS ONLY OPTION BC BIDS ARE NOT ALLOWED
+                    if board_cell_type == 'road':
                         self.buy(dict_property_info, property_name)
-                    elif buy_bid == 'buy' and board_cell_type != 'road':
+                    else:
                         self.buy_property(dict_property_info)
-                    else:
-                        self.bid(dict_property_info, 'temp')
                 elif self.have_enough_money(dict_property_info['price'], plus_mortgageable=True):
-                    mortgage_bid = self.mortgage_or_bid(dict_property_info)
-                    if mortgage_bid == 'mortgage':
-                        self.mortgage_and_buy(dict_property_info, property_name, board_cell_type)
-                    else:
-                        self.bid(dict_property_info, 'temp')
-                else:
-                    # Players with no money should bid
-                    self.bid(dict_property_info, 'temp')
+                    # MORTAGE IS ONLY OPTION BC BIDS ARE NOT ALLOWED
+                    self.mortgage_and_buy(dict_property_info, property_name, board_cell_type)
+
+            # WHEN YOU LAND ON SOMEONE ELSE'S PROPERTY
             elif property_owner is not None and dict_property_info['is_mortgaged'] is False:
                 # Have enough money to rent?
                 rent = self.estimate_rent(dict_property_info)
@@ -929,7 +903,6 @@ class Player:
                 else:
                     if not self.is_bankrupt(rent):
                         self.mortgage_and_pay_rent(dict_property_info)
-                # self.make_offer(road_owner)  # This should be possible at any time in the game...
 
         elif board_cell_type == 'go' or board_cell_type == 'free parking':
             pass
