@@ -613,6 +613,8 @@ class Player:
 
         :return: (bool) True if the player decides to unmortgage roads or properties
         """
+        return False # RETURN FALSE FOR NOW TO EXCLUDE MORTGAGES
+
         return self._dice_value % 2 == 0
 
     def choose_house_hotel_to_buy(self):
@@ -652,6 +654,34 @@ class Player:
                     else:
                         return road_selected, 'house'
         return None, None
+
+    def get_house_hotel_actions(self):
+        actions = []
+        for color in ['blue', 'green', 'yellow', 'red', 'orange', 'purple', 'light_blue', 'brown']:
+            if self._dict_owned_colors[color]:
+                min_count_houses_hotels_in_road = 5
+
+                house_roads = []
+                hotel_roads = []
+                for i, road in enumerate(self.color_to_house_mapping[color]):
+                    houses, hotels = self._dict_owned_houses_hotels[road]
+                    if houses < 4 and hotels == 0: # then can build a house for that road
+                        house_price = self._dict_roads[road]['houses_cost']
+                        if self.have_enough_money(house_price):
+                            house_roads.append(road)
+
+                    if hotels < 1 and houses == 4: # then can build a hotel for that road
+                        hotel_price = self._dict_roads[road]['hotels_cost']
+                        if self.have_enough_money(hotel_price):
+                            hotel_roads.append(road)
+                
+                for road in house_roads:
+                    actions.append("buy_{}_{}".format(road, "house"))
+                for road in hotel_roads:
+                    actions.append("buy_{}_{}".format(road, "hotel"))
+
+                 
+        return actions
 
     def buy_house(self, road):
         """ Buy a house in the given road.
@@ -741,64 +771,10 @@ class Player:
 
         return 'wait'
 
-    def community_chest_street_repair(self):
-        """ Implement logic for the community chest card "street repair", where the player has to pay 40 for each house
-            and 115 for each hotel. The player looses the game if there are no enough money available (bankrupt).
-
-        :return:
-        """
-        count_houses = 0
-        count_hotels = 0
-        for color in self.get_owned_colors():
-            for road in self.color_to_house_mapping[color]:
-                n_houses, n_hotels = self.get_houses_hotel_count(road)
-                count_houses += n_houses
-                count_hotels += n_hotels
-
-        # 40 per house and 115 per hotel
-        total_required_amount = 40 * count_houses + 115 * count_hotels
-
-        if self.have_enough_money(total_required_amount):
-            self.pay_bank(total_required_amount)
-        elif self.have_enough_money(total_required_amount, plus_mortgageable=True):
-            residual_amount_required = total_required_amount - self.cash
-            self.get_money_from_mortgages(residual_amount_required)
-        else:
-            self.is_bankrupt(total_required_amount)
-
-    def play_community_chest(self, board_cell_name):
-        """ Execute logic of the chosen community chest card.
-
-        :param board_cell_name: (string) name of the community chest card
-        :return:
-        """
-
-        if board_cell_name == 'street_repair':
-            self.community_chest_street_repair()
-        elif board_cell_name == 'stock_sale':
-            self._cash += 50
-        elif board_cell_name == 'holiday_fund':
-            self._cash += 100
-        elif board_cell_name == 'second_price':
-            self._cash += 100
-        elif board_cell_name == 'inherit':
-            self._cash += 100
-        elif board_cell_name == 'consultancy':
-            self._cash += 25
-        elif board_cell_name == 'income_tax':
-            self._cash += 20
-        elif board_cell_name == 'insurance':
-            self._cash += 100
-        elif board_cell_name == 'bank_error':
-            self._cash += 200
-        elif board_cell_name == 'hospital_fees' or board_cell_name == 'school_fees' or board_cell_name == 'doctor_fees':
-            amount_to_pay = 100 if board_cell_name == 'hospital_fees' else 50
-            self.pay_tax(amount_to_pay)
-        elif board_cell_name == 'jail':
-            self.go_to_jail
-        elif board_cell_name == 'to_go':
-            self._position = 0
-            self._cash += 200
+    # OVERRIDE THIS FUNCTION FOR INHERITED CLASSES
+    # by default, the player will choose not to buy
+    def choose_action(self, available_actions):
+        return available_actions[0]
 
     def play(self):
         tuple_dices = self.roll_dice()
@@ -814,16 +790,31 @@ class Player:
         board_cell = self._list_board[self._position]
         board_cell_type = board_cell['type']
 
-        # Buy a house or hotel
-        if self.owns_all_roads_of_a_color() and self.want_to_buy_house_hotel():
+        # THIS IS WHERE WE FIND WHICH ACTIONS THE PLAYER CAN TAKE
+        available_actions = ['nothing']
+        if board_cell_type == 'road' or board_cell_type == 'station' or board_cell_type == 'utility':
+            property_name = board_cell['name']
+            dict_property_info = self._dict_roads[property_name] if board_cell_type == 'road' else self._dict_properties[property_name]
+            property_owner = dict_property_info['belongs_to']
+            if property_owner is None and self.have_enough_money(dict_property_info['price']):
+                available_actions.append('buy_property')
+        if self.owns_all_roads_of_a_color(): # need to check if they have enough money and which to buy
+            available_actions.extend(self.get_house_hotel_actions())
 
-            road, house_or_hotel = self.choose_house_hotel_to_buy()
+        # THIS IS WHERE WE DECIDE WHICH ACTION THE PLAYER CHOOSES -- THIS IS WHAT DIFFERS BETWEEN PLAYERS
+        unparsed_action = self.choose_action(available_actions)
+     
+        # PARSE THE ACTION
+        action = unparsed_action.split('_')
+        # Buy a house or hotel
+        if self.owns_all_roads_of_a_color() and len(action) == 3: # action length 3 means buy house/hotel
+            road, house_or_hotel = action[1], action[2]
             if house_or_hotel == 'house' and self._bank['houses'] > 0 and self._dict_owned_houses_hotels[road][0] < 4:
                 house_price = self._dict_roads[road]['houses_cost']
                 if self.have_enough_money(house_price):
                     self.buy_house(road)
                 else:
-                    if self.want_to_mortgage_to_buy_house():
+                    if self.want_to_mortgage_to_buy_house(): # ALWAYS RETURNS FALSE
                         if self._properties_total_mortgageable_amount + self._cash >= house_price:
                             self.get_money_from_mortgages(house_price)
                             self.buy_house(road)
@@ -832,12 +823,12 @@ class Player:
                 if self.have_enough_money(hotel_price):
                     self.buy_hotel(road)
                 else:
-                    if self.want_to_mortgage_to_buy_hotel():
+                    if self.want_to_mortgage_to_buy_hotel(): # ALWAYS RETURNS FALSE
                         if self._properties_total_mortgageable_amount + self._cash >= hotel_price:
                             self.get_money_from_mortgages(hotel_price)
                             self.buy_hotel(road)
 
-        # Unmortgage property
+        # Unmortgage property - ALWAYS FALSE FOR NOW
         if self._properties_total_mortgageable_amount > 0 and self.want_to_unmortgage():
             list_unmortgage_properties = self.choose_unmortgage_properties()
             for property_type, property_name in list_unmortgage_properties:
@@ -883,13 +874,14 @@ class Player:
             if property_name in self._list_owned_roads or property_name in self._list_owned_stations or property_name in self._list_owned_utilities:
                 pass
             # THIS IS WHERE YOU DECIDE TO BUY A PROPERTY
-            elif property_owner is None:
+            elif property_owner is None and len(action) == 2: # action length 2 means taking action to buy property
                 if self.have_enough_money(dict_property_info['price']):
                     # BUY IS ONLY OPTION BC BIDS ARE NOT ALLOWED
                     if board_cell_type == 'road':
                         self.buy(dict_property_info, property_name)
                     else:
                         self.buy_property(dict_property_info)
+                # WILL NEVER REACH THIS ELIF BECAUSE WE CHECK ACTIONS BEFOREHAND
                 elif self.have_enough_money(dict_property_info['price'], plus_mortgageable=True):
                     # MORTAGE IS ONLY OPTION BC BIDS ARE NOT ALLOWED
                     self.mortgage_and_buy(dict_property_info, property_name, board_cell_type)
@@ -914,10 +906,11 @@ class Player:
         elif board_cell_type == 'go to jail':
             self.go_to_jail()
 
+        # GETTING RID OF CHANCE CARDS
         elif board_cell_type == 'community chest':
-            card_name = self.community_cards_deck[0]  # Choose top card
-            self.community_cards_deck.append(self.community_cards_deck.pop(0))  # Put top card at the bottom of the deck
-            self.play_community_chest(card_name)
+            pass
+
+        return unparsed_action
 
     @property
     def cash(self):
