@@ -1,5 +1,6 @@
 import random
 from monosim.player import Player
+from monosim.random_player import choose_random_action
 import pandas as pd
 
 
@@ -17,6 +18,11 @@ def modify_choose_action(choose_action):
 '''
 def import_csv(filename):
     df = pd.read_csv(filename)
+    df['Agent_Properties_Before'] = df['Agent_Properties_Before'].astype(str)
+    df['Opponent_Properties_Before'] = df['Opponent_Properties_Before'].astype(str)
+    df['Agent_Properties_After'] = df['Agent_Properties_After'].astype(str)
+    df['Opponent_Properties_After'] = df['Opponent_Properties_After'].astype(str)
+
     return df
 
 
@@ -24,24 +30,30 @@ def read_csv(df):
     # gathers state, action, reward and next state from csv training file
     transitions = []
     for _, row in df.iterrows():
+        agent_properties_before = () if row['Agent_Properties_Before'] == 'nan' else tuple(sorted(row['Agent_Properties_Before'].split('_')))
+        opponent_properties_before = () if row['Opponent_Properties_Before'] == 'nan' else tuple(sorted(row['Opponent_Properties_Before'].split('_')))
         state = (
             row['Agent_Cash_Before'],
             row['Agent_Location_Before'],
-            tuple(sorted(row['Agent_Properties_Before'].split('_'))),
+            agent_properties_before,
             row['Opponent_Cash_Before'],
-            row['Opponent_Location_Before'],
-            tuple(sorted(row['Opponent_Properties_Before'].split('_')))
+            opponent_properties_before,
         )
+
         action = row['Action']
         reward = row['Reward']
+
+        agent_properties_after = () if row['Agent_Properties_After'] == 'nan' else tuple(sorted(row['Agent_Properties_After'].split('_')))
+        opponent_properties_after = () if row['Opponent_Properties_After'] == 'nan' else tuple(sorted(row['Opponent_Properties_After'].split('_')))
         next_state = (
             row['Agent_Cash_After'],
             row['Agent_Location_After'],
-            tuple(sorted(row['Agent_Properties_After'].split('_'))),
+            agent_properties_after,
             row['Opponent_Cash_After'],
             row['Opponent_Location_After'],
-            tuple(sorted(row['Opponent_Properties_After'].split('_')))
+            opponent_properties_after
         )
+
         transitions.append((state, action, reward, next_state))
     return transitions
 
@@ -53,6 +65,11 @@ class QLearningPlayer(Player):
         self.gamma = gamma
         self.epsilon = epsilon
         self.q_values = {}  # Initialize Q-values storage
+
+        df = import_csv('training_data.csv')
+        transitions = read_csv(df)
+        for state, action, reward, next_state in transitions:
+            self.update_q_value(state, action, reward, next_state, self.get_available_actions())
    
     def get_state(self):
         return (self._cash, self._position, tuple(sorted(self._list_owned_roads + self._list_owned_stations + self._list_owned_utilities)))
@@ -88,6 +105,10 @@ class QLearningPlayer(Player):
             if curV > vMax:
                 vMax = curV
                 aMax = action
+
+        if vMax == 0:
+            return choose_random_action(available_actions)
+
         return aMax
    
        

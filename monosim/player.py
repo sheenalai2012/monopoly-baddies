@@ -776,6 +776,21 @@ class Player:
     def choose_action(self, available_actions, state):
         return available_actions[0]
 
+    def get_available_actions(self):
+        board_cell = self._list_board[self._position]
+        board_cell_type = board_cell['type']
+
+        available_actions = ['nothing']
+        if board_cell_type == 'road' or board_cell_type == 'station' or board_cell_type == 'utility':
+            property_name = board_cell['name']
+            dict_property_info = self._dict_roads[property_name] if board_cell_type == 'road' else self._dict_properties[property_name]
+            property_owner = dict_property_info['belongs_to']
+            if property_owner is None and self.have_enough_money(dict_property_info['price']):
+                available_actions.append('buy_property')
+        if self.owns_all_roads_of_a_color(): # need to check if they have enough money and which to buy
+            available_actions.extend(self.get_house_hotel_actions())
+        return available_actions
+
     def play(self, state):
         tuple_dices = self.roll_dice()
         self._dice_value = tuple_dices[0] + tuple_dices[1]
@@ -791,15 +806,7 @@ class Player:
         board_cell_type = board_cell['type']
 
         # THIS IS WHERE WE FIND WHICH ACTIONS THE PLAYER CAN TAKE
-        available_actions = ['nothing']
-        if board_cell_type == 'road' or board_cell_type == 'station' or board_cell_type == 'utility':
-            property_name = board_cell['name']
-            dict_property_info = self._dict_roads[property_name] if board_cell_type == 'road' else self._dict_properties[property_name]
-            property_owner = dict_property_info['belongs_to']
-            if property_owner is None and self.have_enough_money(dict_property_info['price']):
-                available_actions.append('buy_property')
-        if self.owns_all_roads_of_a_color(): # need to check if they have enough money and which to buy
-            available_actions.extend(self.get_house_hotel_actions())
+        available_actions = self.get_available_actions()
 
         # THIS IS WHERE WE DECIDE WHICH ACTION THE PLAYER CHOOSES -- THIS IS WHAT DIFFERS BETWEEN PLAYERS
         unparsed_action = self.choose_action(available_actions, state)

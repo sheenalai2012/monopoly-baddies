@@ -7,6 +7,8 @@ from monosim.qLearning_player import QLearningPlayer
 
 import random
 import time
+import matplotlib.pyplot as plt
+
 
 def gather_all_states(agent, opponent):
     agent_state = game_state.get_state(agent)
@@ -16,6 +18,8 @@ def gather_all_states(agent, opponent):
 if __name__ == '__main__':
     start_time = time.time()
 
+    player1_win_counts = 0
+    player2_win_counts = 0
     for seed in range(0, 1000): 
         random.seed(seed)
         bank = get_bank()
@@ -88,6 +92,22 @@ if __name__ == '__main__':
         print(f"Game #: {seed} Amount of Rounds played: {round_count} \n")
         print(f"Resulting cash player1: ${player1._cash} ")
         print(f"Resulting cash agent: ${agent._cash} \n")
+
+        if player1.has_lost():
+            player2_win_counts += 1
+        else:
+            player1_win_counts += 1
+    
+    # make a graph
+    categories = ['player1', 'agent']
+    values = [player1_win_counts, player2_win_counts]
+    plt.bar(categories, values)
+    plt.xlabel('Players')
+    plt.ylabel('Win Count')
+    plt.title('Win Count for Player1 vs Agent')
+    plt.show()
+    
+
 
     end_time = time.time()
     elapsed_time = end_time - start_time

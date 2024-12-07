@@ -1,0 +1,3 @@
+Round,Agent_Cash_Before,Agent_Location_Before,Agent_Properties_Before,Opponent_Cash_Before,Opponent_Location_Before,Opponent_Properties_Before,Action,Agent_Cash_After,Agent_Location_After,Agent_Properties_After,Opponent_Cash_After,Opponent_Location_After,Opponent_Properties_After,Reward
+0,1500,0,,1500,2,,nothing,1300,4,,1500,2,,-0.07142857142857142
+1,1300,4,,1340,14,northumberland avenue,nothing,1300,10,,1340,14,northumberland avenue,0.0
