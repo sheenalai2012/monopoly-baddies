@@ -16,7 +16,8 @@ class GameState:
             'Action',
             'Agent_Cash_After', 'Agent_Location_After', 'Agent_Properties_After',
             'Opponent_Cash_After', 'Opponent_Location_After', 'Opponent_Properties_After', 
-            'Reward'
+            'Reward',
+            'Available_Actions'
         ]
 
         if not os.path.exists(self.csv_file):

@@ -28,7 +28,10 @@ if __name__ == '__main__':
     player1 = AlwaysBuyPlayer('player1', 1, bank, list_board, dict_roads, dict_properties, community_cards_deck)
     # agent = RandomPlayer('agent', 2, bank, list_board, dict_roads, dict_properties, community_cards_deck)
     agent = QLearningPlayer('agent', 2, bank, list_board, dict_roads, dict_properties, community_cards_deck)
-    agent.train()
+    
+    print("training started...")
+    agent.train() # training took 9 mins
+    print("training ended...")
 
 
     player1_win_counts = 0
@@ -60,7 +63,8 @@ if __name__ == '__main__':
                 prev_state, opponent_state_before = gather_all_states(agent, player1)
                 if player._name == "agent":
                     
-
+                    available_actions = '?'.join(agent.get_available_actions())
+                    
                     # perform action
                     action = agent.play((prev_state, opponent_state_before))
 
@@ -72,7 +76,11 @@ if __name__ == '__main__':
                     total_cash = sum(p._cash for p in list_players)
 
                     end_game_reward = 1000000 if player1.has_lost() else 0  # 1 million bucks
-                    reward = (net_cash / total_cash) + end_game_reward
+
+                    reward = end_game_reward
+
+                    if total_cash:
+                        reward = (net_cash / total_cash) + end_game_reward
 
                     transition = [
                         round_count,
@@ -89,9 +97,10 @@ if __name__ == '__main__':
                         opponent_state_after['cash'],
                         opponent_state_after['location'],
                         opponent_state_after['properties'],
-                        reward
+                        reward,
+                        available_actions
                     ]
-                    # game_state.log_transition(transition)
+                    game_state.log_transition(transition)
                 else:
                     player.play((prev_state, opponent_state_before))
 

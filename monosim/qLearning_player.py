@@ -3,6 +3,8 @@ from monosim.player import Player
 from monosim.random_player import choose_random_action
 import pandas as pd
 
+from monosim.always_buy_player import always_buy
+
 
 #def QlearningPlayer(Player):
 '''
@@ -32,6 +34,7 @@ def import_csv(filename):
 def read_csv(df):
     # gathers state, action, reward and next state from csv training file
     transitions = []
+    i = 0
     for _, row in df.iterrows():
         agent_properties_before = () if row['Agent_Properties_Before'] == 'nan' else tuple(sorted(row['Agent_Properties_Before'].split('_')))
         opponent_properties_before = () if row['Opponent_Properties_Before'] == 'nan' else tuple(sorted(row['Opponent_Properties_Before'].split('_')))
@@ -56,9 +59,12 @@ def read_csv(df):
             row['Opponent_Location_After'],
             opponent_properties_after
         )
-        available_actions = tuple(row['Available_Actions'].split('_'))
+        available_actions = tuple(row['Available_Actions'].split('?'))
 
         transitions.append((state, action, reward, next_state, available_actions))
+        i += 1
+        if i == 1000:
+            break
     return transitions
 
 
@@ -73,7 +79,7 @@ class QLearningPlayer(Player):
     def train(self):
         df = import_csv('monopoly_game_state.csv')
         transitions = read_csv(df)
-        for state, action, reward, next_state, available_actions in transitions:
+        for state, action, reward, next_state, available_actions in transitions[:1000]:
             self.update_q_value(state, action, reward, next_state, available_actions)
    
     def get_state(self):
@@ -112,7 +118,7 @@ class QLearningPlayer(Player):
                 aMax = action
 
         if vMax == 0:
-            return choose_random_action(available_actions)
+            return always_buy(available_actions)
 
         return aMax
    
