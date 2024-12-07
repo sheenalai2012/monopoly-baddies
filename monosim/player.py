@@ -43,6 +43,9 @@ class Player:
         self.color_to_house_mapping = get_color_to_house_mapping()
         self.community_cards_deck = community_cards_deck
 
+    def reset(self, bank, list_board, dict_roads, dict_properties, community_cards_deck):
+        self.__init__(self._name, self._number, bank, list_board, dict_roads, dict_properties, community_cards_deck)
+
     def roll_dice(self):
         """ Simulate the roll of two dice. Returns two int values between 1 and 6.
 

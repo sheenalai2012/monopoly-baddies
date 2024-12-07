@@ -66,7 +66,8 @@ class QLearningPlayer(Player):
         self.epsilon = epsilon
         self.q_values = {}  # Initialize Q-values storage
 
-        df = import_csv('training_data.csv')
+    def train(self):
+        df = import_csv('monopoly_game_state.csv')
         transitions = read_csv(df)
         for state, action, reward, next_state in transitions:
             self.update_q_value(state, action, reward, next_state, self.get_available_actions())

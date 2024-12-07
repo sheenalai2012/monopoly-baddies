@@ -18,6 +18,19 @@ def gather_all_states(agent, opponent):
 if __name__ == '__main__':
     start_time = time.time()
 
+    # just for player initialization purposes
+    bank = get_bank()
+    list_board, dict_roads = get_board(), get_roads()
+    dict_properties = get_properties()
+    dict_community_chest_cards = get_community_chest_cards()
+    community_cards_deck = list(dict_community_chest_cards.keys())
+
+    player1 = AlwaysBuyPlayer('player1', 1, bank, list_board, dict_roads, dict_properties, community_cards_deck)
+    # agent = RandomPlayer('agent', 2, bank, list_board, dict_roads, dict_properties, community_cards_deck)
+    agent = QLearningPlayer('agent', 2, bank, list_board, dict_roads, dict_properties, community_cards_deck)
+    agent.train()
+
+
     player1_win_counts = 0
     player2_win_counts = 0
     for seed in range(0, 1000): 
@@ -28,13 +41,8 @@ if __name__ == '__main__':
         dict_community_chest_cards = get_community_chest_cards()
         community_cards_deck = list(dict_community_chest_cards.keys())
 
-        # never buys
-        # player1 = Player('player1', 1, bank, list_board, dict_roads, dict_properties, community_cards_deck)
-
-        # always buy
-        player1 = AlwaysBuyPlayer('player1', 1, bank, list_board, dict_roads, dict_properties, community_cards_deck)
-        # agent = RandomPlayer('agent', 4, bank, list_board, dict_roads, dict_properties, community_cards_deck)
-        agent = QLearningPlayer('agent', 4, bank, list_board, dict_roads, dict_properties, community_cards_deck)
+        player1.reset(bank, list_board, dict_roads, dict_properties, community_cards_deck)
+        agent.reset(bank, list_board, dict_roads, dict_properties, community_cards_deck)
 
         list_players = [player1, agent]
 
