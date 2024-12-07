@@ -22,6 +22,9 @@ def import_csv(filename):
     df['Opponent_Properties_Before'] = df['Opponent_Properties_Before'].astype(str)
     df['Agent_Properties_After'] = df['Agent_Properties_After'].astype(str)
     df['Opponent_Properties_After'] = df['Opponent_Properties_After'].astype(str)
+    df['Opponent_Properties_After'] = df['Opponent_Properties_After'].astype(str)
+    df['Available_Actions'] = df['Available_Actions'].astype(str)
+
 
     return df
 
@@ -53,8 +56,9 @@ def read_csv(df):
             row['Opponent_Location_After'],
             opponent_properties_after
         )
+        available_actions = tuple(row['Available_Actions'].split('_'))
 
-        transitions.append((state, action, reward, next_state))
+        transitions.append((state, action, reward, next_state, available_actions))
     return transitions
 
 
@@ -69,8 +73,8 @@ class QLearningPlayer(Player):
     def train(self):
         df = import_csv('monopoly_game_state.csv')
         transitions = read_csv(df)
-        for state, action, reward, next_state in transitions:
-            self.update_q_value(state, action, reward, next_state, self.get_available_actions())
+        for state, action, reward, next_state, available_actions in transitions:
+            self.update_q_value(state, action, reward, next_state, available_actions)
    
     def get_state(self):
         return (self._cash, self._position, tuple(sorted(self._list_owned_roads + self._list_owned_stations + self._list_owned_utilities)))
