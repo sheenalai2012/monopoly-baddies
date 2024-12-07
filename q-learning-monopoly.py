@@ -3,6 +3,7 @@ from monosim.board import get_board, get_roads, get_properties, get_community_ch
 from monosim.random_player import RandomPlayer
 from monosim.always_buy_player import AlwaysBuyPlayer
 from monosim.gamestate import GameState
+from monosim.qLearning_player import QLearningPlayer
 
 import random
 import time
@@ -28,7 +29,8 @@ if __name__ == '__main__':
 
         # always buy
         player1 = AlwaysBuyPlayer('player1', 1, bank, list_board, dict_roads, dict_properties, community_cards_deck)
-        agent = RandomPlayer('agent', 4, bank, list_board, dict_roads, dict_properties, community_cards_deck)
+        # agent = RandomPlayer('agent', 4, bank, list_board, dict_roads, dict_properties, community_cards_deck)
+        agent = QLearningPlayer('agent', 4, bank, list_board, dict_roads, dict_properties, community_cards_deck)
 
         list_players = [player1, agent]
 
@@ -42,12 +44,13 @@ if __name__ == '__main__':
             prev_cash = agent._cash
 
             for player in list_players:
+                # gather state before action
+                prev_state, opponent_state_before = gather_all_states(agent, player1)
                 if player._name == "agent":
-                    # gather state before action
-                    prev_state, opponent_state_before = gather_all_states(agent, player1)
+                    
 
                     # perform action
-                    action = agent.play()
+                    action = agent.play((prev_state, opponent_state_before))
 
                     # gather state after action
                     new_state, opponent_state_after = gather_all_states(agent, player1)
@@ -76,9 +79,9 @@ if __name__ == '__main__':
                         opponent_state_after['properties'],
                         reward
                     ]
-                    game_state.log_transition(transition)
+                    # game_state.log_transition(transition)
                 else:
-                    player.play()
+                    player.play((prev_state, opponent_state_before))
 
             round_count += 1
 

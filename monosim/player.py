@@ -773,10 +773,10 @@ class Player:
 
     # OVERRIDE THIS FUNCTION FOR INHERITED CLASSES
     # by default, the player will choose not to buy
-    def choose_action(self, available_actions):
+    def choose_action(self, available_actions, state):
         return available_actions[0]
 
-    def play(self):
+    def play(self, state):
         tuple_dices = self.roll_dice()
         self._dice_value = tuple_dices[0] + tuple_dices[1]
         if self._position is not 10 or (self._position == 10 and self._free_visit):  # if player is not in jail
@@ -802,7 +802,7 @@ class Player:
             available_actions.extend(self.get_house_hotel_actions())
 
         # THIS IS WHERE WE DECIDE WHICH ACTION THE PLAYER CHOOSES -- THIS IS WHAT DIFFERS BETWEEN PLAYERS
-        unparsed_action = self.choose_action(available_actions)
+        unparsed_action = self.choose_action(available_actions, state)
      
         # PARSE THE ACTION
         action = unparsed_action.split('_')

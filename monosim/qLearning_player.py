@@ -75,15 +75,16 @@ class QLearningPlayer(Player):
         self.q_values[(state, action)] = new_q_value
 
 
-
-
-    def choose_action(self, state, available_actions):
+    def choose_action(self, available_actions, state):
+        my_state, opp_state = state
         # take a random action if random value < epsilon, otherwise we take max q value     
         aMax = available_actions[0]
-        vMax = self.q_values.get((state, aMax), 0)  # Default Q-value is 0
-   
+
+        tuple_state = (my_state['cash'], my_state['location'], tuple(sorted(my_state['properties'].split('_'))), opp_state['cash'], opp_state['location'], tuple(sorted(opp_state['properties'].split('_'))))
+        
+        vMax = self.q_values.get((tuple_state, aMax), 0)  # Default Q-value is 0
         for action in available_actions:
-            curV = self.q_values.get((state, action), 0)
+            curV = self.q_values.get((tuple_state, action), 0)
             if curV > vMax:
                 vMax = curV
                 aMax = action

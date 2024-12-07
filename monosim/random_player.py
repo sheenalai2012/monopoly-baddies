@@ -2,7 +2,7 @@ import random
 from monosim.player import Player
 
 def modify_choose_action(choose_action):
-    def _wrapper(self, available_actions):
+    def _wrapper(self, available_actions, state):
         diff_actions = 1
         has_house_hotel_action = False
         if len(available_actions) > 1:
