@@ -1,7 +1,10 @@
 import random
 from monosim.player import Player
 
-def choose_random_action(available_actions):
+def choose_random_action(available_actions, mode=None):
+    if len(available_actions) == 1: # can only do nothing; return nothing
+        return available_actions[0]
+    
     diff_actions = 1
     has_house_hotel_action = False
     if len(available_actions) > 1:
@@ -12,7 +15,26 @@ def choose_random_action(available_actions):
                 has_house_hotel_action = True
         else:
             has_house_hotel_action = True
+    
+   
+    
+    if mode == 'agressive': # sample doing nothing with a lower prob
+        randy = random.randint(1,diff_actions+2)
+        if randy == 1:
+            return available_actions[0]
+        if not has_house_hotel_action:
+            return available_actions[1]
         
+        randy = random.randint(0, 1)
+        if randy == 0 and available_actions[1] == 'buy_property':
+            return available_actions[1]
+        
+        start_idx = 1 if diff_actions == 2 else 2
+        randy = random.randint(start_idx, len(available_actions) - 1)
+        return available_actions[randy]
+
+        
+    # CONSERVATIVE MODE!!
     # we want to sample equally do nothing, buy property, and buy house/hotel out of max 3 that exist
     randy = random.randint(0, diff_actions - 1)
     if randy == 0: # return nothing
