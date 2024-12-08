@@ -5,6 +5,7 @@ from monosim.always_buy_player import AlwaysBuyPlayer
 from monosim.gamestate import GameState
 from monosim.qLearning_player import QLearningPlayer
 
+import pickle
 import random
 import time
 import matplotlib.pyplot as plt
@@ -15,8 +16,13 @@ def gather_all_states(agent, opponent):
     opponent_state = game_state.get_state(opponent)
     return agent_state, opponent_state
 
+def load_agent(filename):
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
+
 if __name__ == '__main__':
     start_time = time.time()
+    print("Simulation Started...")
 
     # just for player initialization purposes
     bank = get_bank()
@@ -25,14 +31,11 @@ if __name__ == '__main__':
     dict_community_chest_cards = get_community_chest_cards()
     community_cards_deck = list(dict_community_chest_cards.keys())
 
-    player1 = AlwaysBuyPlayer('player1', 1, bank, list_board, dict_roads, dict_properties, community_cards_deck)
-    # agent = RandomPlayer('agent', 2, bank, list_board, dict_roads, dict_properties, community_cards_deck)
-    agent = QLearningPlayer('agent', 2, bank, list_board, dict_roads, dict_properties, community_cards_deck)
-    
-    print("training started...")
-    agent.train() # training took 9 mins
-    print("training ended...")
+    # player1 = AlwaysBuyPlayer('player1', 1, bank, list_board, dict_roads, dict_properties, community_cards_deck)
+    player1 = RandomPlayer('player1', 2, bank, list_board, dict_roads, dict_properties, community_cards_deck)
+    agent = load_agent('trained_agent.pkl')
 
+    SAVE_STATE = False
 
     player1_win_counts = 0
     player2_win_counts = 0
@@ -100,7 +103,8 @@ if __name__ == '__main__':
                         reward,
                         available_actions
                     ]
-                    game_state.log_transition(transition)
+                    if SAVE_STATE:
+                        game_state.log_transition(transition)
                 else:
                     player.play((prev_state, opponent_state_before))
 
@@ -110,7 +114,7 @@ if __name__ == '__main__':
         print(f"Resulting cash player1: ${player1._cash} ")
         print(f"Resulting cash agent: ${agent._cash} \n")
 
-        if player1.has_lost():
+        if player1.has_lost() or agent._cash > player1._cash:
             player2_win_counts += 1
         else:
             player1_win_counts += 1
