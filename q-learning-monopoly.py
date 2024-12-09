@@ -10,6 +10,32 @@ import random
 import time
 import matplotlib.pyplot as plt
 
+def plot_win_counts(player1_win_counts, player2_win_counts):
+    """Create a bar plot for player win counts."""
+    categories = ['playe1', 'agent']
+    values = [player1_win_counts, player2_win_counts]
+    
+    plt.bar(categories, values)
+    plt.xlabel('Players')
+    plt.ylabel('Win Count')
+    plt.title('Win Count for Player1 vs Agent')
+    plt.show()
+
+def plot_property_frequencies(properties_owned):
+    """Create a bar plot for the frequency of owned properties."""
+    names = list(properties_owned.keys())
+    frequencies = list(properties_owned.values())
+
+    plt.figure(figsize=(10, 6))
+    plt.bar(names, frequencies, color='blue')
+
+    plt.title('Frequency of Properties Owned', fontsize=16)
+    plt.xlabel('Property Names', fontsize=14)
+    plt.ylabel('Frequency', fontsize=14)
+
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()  
+    plt.show()
 
 def gather_all_states(agent, opponent):
     agent_state = game_state.get_state(agent)
@@ -24,12 +50,20 @@ if __name__ == '__main__':
     start_time = time.time()
     print("Simulation Started...")
 
+    properties_owned = {}
+    last_owned = None
+
     # just for player initialization purposes
     bank = get_bank()
     list_board, dict_roads = get_board(), get_roads()
     dict_properties = get_properties()
     dict_community_chest_cards = get_community_chest_cards()
     community_cards_deck = list(dict_community_chest_cards.keys())
+
+    # init all properties that exist
+    all_prop = dict_properties | dict_roads
+    for prop in all_prop:
+        properties_owned[prop] = 0
 
     # player1 = AlwaysBuyPlayer('player1', 1, bank, list_board, dict_roads, dict_properties, community_cards_deck)
     player1 = RandomPlayer('player1', 2, bank, list_board, dict_roads, dict_properties, community_cards_deck)
@@ -39,7 +73,7 @@ if __name__ == '__main__':
 
     player1_win_counts = 0
     player2_win_counts = 0
-    for seed in range(0, 1000): 
+    for seed in range(0, 100): 
         random.seed(seed)
         bank = get_bank()
         list_board, dict_roads = get_board(), get_roads()
@@ -78,7 +112,7 @@ if __name__ == '__main__':
                     net_cash = new_state['cash'] - prev_state['cash']
                     total_cash = sum(p._cash for p in list_players)
 
-                    end_game_reward = 1000000 if player1.has_lost() else 0  # 1 million bucks
+                    end_game_reward = 1000000 if player1.has_lost() else 0  # 1 million buckaroos
 
                     reward = end_game_reward
 
@@ -103,10 +137,14 @@ if __name__ == '__main__':
                         reward,
                         available_actions
                     ]
+
+                    last_owned = new_state['properties']
                     if SAVE_STATE:
                         game_state.log_transition(transition)
+
                 else:
                     player.play((prev_state, opponent_state_before))
+                
 
             round_count += 1
 
@@ -116,20 +154,21 @@ if __name__ == '__main__':
 
         if player1.has_lost() or agent._cash > player1._cash:
             player2_win_counts += 1
+
+            last_owned = last_owned.split("_")
+            for name in last_owned:
+                properties_owned[name] += 1
+            
         else:
             player1_win_counts += 1
     
-    # make a graph
-    categories = ['player1', 'agent']
-    values = [player1_win_counts, player2_win_counts]
-    plt.bar(categories, values)
-    plt.xlabel('Players')
-    plt.ylabel('Win Count')
-    plt.title('Win Count for Player1 vs Agent')
-    plt.show()
+    # plot_win_counts(player1_win_counts, player2_win_counts)
+    # plot_property_frequencies(properties_owned)
     
-
-
     end_time = time.time()
     elapsed_time = end_time - start_time
     print("Elapsed time:", elapsed_time)
+
+
+    
+
