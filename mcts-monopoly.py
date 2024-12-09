@@ -41,7 +41,7 @@ if __name__ == '__main__':
         player1.reset(bank, list_board, dict_roads, dict_properties, community_cards_deck)
         agent.reset(bank, list_board, dict_roads, dict_properties, community_cards_deck)
 
-        list_players = [player1, agent]
+        list_players = [agent, player1]
 
         for player in list_players:
             player.meet_other_players([p for p in list_players if p != player])
@@ -66,10 +66,15 @@ if __name__ == '__main__':
         print(f"Resulting cash player1: ${player1._cash} ")
         print(f"Resulting cash agent: ${agent._cash} \n")
 
-        if player1._cash > agent._cash:
+        if player1.has_lost():
+            player2_win_counts += 1
+        elif agent.has_lost():
             player1_win_counts += 1
         else:
-            player2_win_counts += 1
+            if player1._cash > agent._cash:
+                player1_win_counts += 1
+            else:
+                player2_win_counts += 1
         
         print(f"Score {player1_win_counts}-{player2_win_counts} \n")
 

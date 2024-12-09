@@ -2,13 +2,14 @@ from copy import deepcopy
 from monosim.random_player import choose_random_action
 from monosim.player import Player
 from monosim.always_buy_player import AlwaysBuyPlayer
+from monosim.random_player import RandomPlayer
 
 class MCTS:
     def __init__(self, player1, agent):
         self.player1 = player1
         self.agent = agent
 
-        self.n = 40 # nunmber of rollouts for each action
+        self.n = 100 # nunmber of rollouts for each action
     
     def select_action(self):
         available_actions = self.agent.get_available_actions()
@@ -98,10 +99,10 @@ class Hallucinator:
     
 
     def random_rollout(self, action):
-        list_players = [self._player1, self._agent]
+        list_players = [self._agent, self._player1]
         discounted_reward = 0
 
-        for i in range(100): # 100 turns
+        for i in range(100): # 10 turns
             prev_cash = self._agent._cash
 
             for player in list_players:
@@ -110,8 +111,9 @@ class Hallucinator:
                         self._agent.play((), specified_action=action)
                     else:
                         self._agent.play(())
-
-                    # reward calculation
+                else:
+                    player.play((None, None))  # its chill bc we are not using qlearning for play function
+                        # reward calculation
                     net_cash = self._agent._cash - prev_cash
                     total_cash = sum(p._cash for p in list_players)
 
@@ -127,17 +129,13 @@ class Hallucinator:
                     if self._player1.has_lost() or self._agent.has_lost():
                         return discounted_reward
                         # print("inside", discounted_reward)
-
-                   
-                else:
-                    player.play((None, None))  # its chill bc we are not using qlearning for play function
  
         return discounted_reward
 
 # the exploration player
 def modify_choose_action(choose_action):
     def _wrapper(self, available_actions, state):
-        return choose_random_action(available_actions, mode='agressive')
+        return choose_random_action(available_actions)
         
     return _wrapper
 
